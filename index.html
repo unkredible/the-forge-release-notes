@@ -114,6 +114,27 @@
       margin-top: 16px;
     }
 
+    .versionGroup {
+      display: grid;
+      gap: 4px;
+    }
+
+    .versionGroupLabel {
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 6px 0 2px 2px;
+    }
+
+    .versionGroupItems {
+      display: grid;
+      gap: 4px;
+      padding-left: 8px;
+      border-left: 2px solid var(--line);
+    }
+
     .versionLink {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -121,6 +142,7 @@
       color: var(--muted);
       padding: 10px 12px;
       text-decoration: none;
+      font-size: 13px;
     }
 
     .versionLink:hover,
@@ -177,7 +199,7 @@
   </main>
 
   <script>
-    const versions = ["1.1.0", "1.0.10", "1.0.9", "1.0.8", "1.0.7", "1.0.6", "1.0.5", "1.0.4", "1.0.3", "1.0.2", "1.0.1", "1.0.0"];
+    const versions = ["1.1.1", "1.1.0", "1.0.10", "1.0.9", "1.0.8", "1.0.7", "1.0.6", "1.0.5", "1.0.4", "1.0.3", "1.0.2", "1.0.1", "1.0.0"];
     const params = new URLSearchParams(window.location.search);
     const selectedVersion = versions.includes(params.get("version")) ? params.get("version") : versions[0];
     const versionsNode = document.getElementById("versions");
@@ -226,12 +248,34 @@
       return output.join("");
     }
 
-    versionsNode.innerHTML = versions
-      .map((version) => {
-        const active = version === selectedVersion ? " active" : "";
-        return `<a class="versionLink${active}" href="?version=${version}">v${version}</a>`;
-      })
-      .join("");
+    // Group versions by major.minor (first 2 parts)
+    const versionGroups = {};
+    for (const version of versions) {
+      const majorMinor = version.split('.').slice(0, 2).join('.');
+      if (!versionGroups[majorMinor]) {
+        versionGroups[majorMinor] = [];
+      }
+      versionGroups[majorMinor].push(version);
+    }
+
+    // Render grouped versions
+    const groupedHtml = Object.entries(versionGroups).map(([group, groupVersions]) => {
+      const itemsHtml = groupVersions
+        .map((version) => {
+          const active = version === selectedVersion ? " active" : "";
+          return `<a class="versionLink${active}" href="?version=${version}">v${version}</a>`;
+        })
+        .join("");
+      
+      return `
+        <div class="versionGroup">
+          <div class="versionGroupLabel">${group}</div>
+          <div class="versionGroupItems">${itemsHtml}</div>
+        </div>
+      `;
+    }).join("");
+
+    versionsNode.innerHTML = groupedHtml;
 
     fetch(`v${selectedVersion}.md`)
       .then((response) => {
