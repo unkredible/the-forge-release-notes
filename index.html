@@ -126,6 +126,24 @@
       letter-spacing: 0.05em;
       text-transform: uppercase;
       padding: 6px 0 2px 2px;
+      cursor: pointer;
+      position: relative;
+      user-select: none;
+    }
+
+    .versionGroupLabel::after {
+      content: "▾";
+      position: absolute;
+      right: 6px;
+      top: 2px;
+      font-size: 12px;
+      transition: transform 0.18s ease;
+      color: var(--muted);
+    }
+
+    .versionGroup.collapsed .versionGroupLabel::after {
+      transform: rotate(-90deg);
+      color: var(--muted);
     }
 
     .versionGroupItems {
@@ -133,6 +151,10 @@
       gap: 4px;
       padding-left: 8px;
       border-left: 2px solid var(--line);
+    }
+
+    .versionGroup.collapsed .versionGroupItems {
+      display: none;
     }
 
     .versionLink {
@@ -277,19 +299,75 @@
 
     versionsNode.innerHTML = groupedHtml;
 
-    fetch(`v${selectedVersion}.md`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Release note not found.");
+    // Make groups collapsible and wire up interactions
+    const groupNodes = Array.from(versionsNode.querySelectorAll('.versionGroup'));
+    const selectedGroupKey = selectedVersion.split('.').slice(0,2).join('.');
+
+    groupNodes.forEach((groupEl) => {
+      const label = groupEl.querySelector('.versionGroupLabel');
+      const items = groupEl.querySelector('.versionGroupItems');
+      const groupKey = label.textContent.trim();
+
+      // Collapse all groups except the one that contains the selectedVersion
+      if (groupKey !== selectedGroupKey) {
+        groupEl.classList.add('collapsed');
+      } else {
+        groupEl.classList.remove('collapsed');
+      }
+
+      // Toggle group (accordion behavior: collapse others when opening)
+      label.addEventListener('click', () => {
+        const isCollapsed = groupEl.classList.contains('collapsed');
+        groupNodes.forEach((g) => g.classList.add('collapsed'));
+        if (isCollapsed) {
+          groupEl.classList.remove('collapsed');
+        } else {
+          groupEl.classList.add('collapsed');
         }
-        return response.text();
-      })
-      .then((markdown) => {
-        contentNode.innerHTML = `${renderMarkdown(markdown)}<a class="rawLink" href="v${selectedVersion}.md">Open Markdown</a>`;
-      })
-      .catch(() => {
-        contentNode.innerHTML = "<h1>Release notes unavailable</h1><p>Try again later.</p>";
       });
+
+      // Wire version link clicks to load content without full page reload
+      Array.from(items.querySelectorAll('.versionLink')).forEach((link) => {
+        link.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          const href = link.getAttribute('href') || '';
+          const ver = new URLSearchParams(href.split('?')[1]).get('version');
+
+          // Mark active link
+          versionsNode.querySelectorAll('.versionLink').forEach((l) => l.classList.remove('active'));
+          link.classList.add('active');
+
+          // Ensure only this group is open
+          groupNodes.forEach((g) => g.classList.add('collapsed'));
+          groupEl.classList.remove('collapsed');
+
+          // Update URL state
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.set('version', ver);
+          window.history.replaceState({}, '', newUrl);
+
+          // Load release note
+          loadRelease(ver);
+        });
+      });
+    });
+
+    // Load the selected (most recent) release by default
+    loadRelease(selectedVersion);
+
+    function loadRelease(version) {
+      fetch(`v${version}.md`)
+        .then((response) => {
+          if (!response.ok) throw new Error('Release note not found');
+          return response.text();
+        })
+        .then((markdown) => {
+          contentNode.innerHTML = `${renderMarkdown(markdown)}<a class="rawLink" href="v${version}.md">Open Markdown</a>`;
+        })
+        .catch(() => {
+          contentNode.innerHTML = "<h1>Release notes unavailable</h1><p>Try again later.</p>";
+        });
+    }
   </script>
 </body>
 </html>
