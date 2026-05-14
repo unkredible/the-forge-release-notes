@@ -1,6 +1,6 @@
 # The Forge Release Notes
 
-Public release notes for The Forge - versione 1.1.1
+Public release notes for The Forge - versione 1.1.2
 
 **Repository GitHub:** https://github.com/unkredible/the-forge-release-notes
 
@@ -11,8 +11,8 @@ Public release notes for The Forge - versione 1.1.1
 ## Struttura
 
 - Repository locale: `c:\git\the-forge-release-notes`
-- File versioni: `v1.0.0.md`, `v1.0.1.md`, `v1.1.0.md`, `v1.1.1.md`, etc.
-- File principale: `v1.1.1.md` (versione corrente)
+- File versioni: `v1.0.0.md`, `v1.0.1.md`, `v1.1.0.md`, `v1.1.2.md`, etc.
+- File principale: `v1.1.2.md` (versione corrente)
 
 ## Come aggiornare le Release Notes
 
